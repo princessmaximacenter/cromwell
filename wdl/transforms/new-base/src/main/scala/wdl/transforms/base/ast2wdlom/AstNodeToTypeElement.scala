@@ -49,6 +49,7 @@ object AstNodeToTypeElement {
     "String" -> WomStringType,
     "Float" -> WomFloatType,
     "Boolean" -> WomBooleanType,
-    "File" -> WomSingleFileType
+    "File" -> WomSingleFileType,
+    "Directory" -> WomUnlistedDirectoryType
   )
 }

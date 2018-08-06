@@ -1,0 +1,13 @@
+name: directory_type
+testFormat: workflowsuccess
+tags: ["wdl_1.0"]
+
+files {
+  workflow: wdl_biscayne/directory_type/directory_type.wdl
+}
+
+metadata {
+  workflowName: directory_type
+  "outputs.directory_type.out.0": "foo text"
+  "outputs.directory_type.out.1": "foo text2"
+}
