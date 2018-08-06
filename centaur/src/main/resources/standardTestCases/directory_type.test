@@ -1,6 +1,6 @@
 name: directory_type
 testFormat: workflowsuccess
-tags: ["wdl_1.0"]
+tags: ["wdl_biscayne"]
 
 files {
   workflow: wdl_biscayne/directory_type/directory_type.wdl

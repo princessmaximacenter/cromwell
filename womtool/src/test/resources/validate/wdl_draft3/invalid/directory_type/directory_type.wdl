@@ -1,6 +1,6 @@
-version biscayne
+version 1.0
 
-workflow directory_type {
+workflow use_directory {
   call make_directory
   call read_from_directory { input: d = make_directory.d }
 
@@ -12,9 +12,8 @@ workflow directory_type {
 task make_directory {
   command {
     mkdir foo
-    mkdir foo/bar
     echo "foo text" > foo/text
-    echo "foo text2" > foo/bar/text2
+    echo "foo text2" > foo/text2
   }
   runtime {
     docker: "ubuntu:latest"
@@ -30,7 +29,7 @@ task read_from_directory {
   }
   command {
     cat ~{d}/text
-    cat ~{d}/bar/text2
+    cat ~{d}/text2
   }
   runtime {
     docker: "ubuntu:latest"
