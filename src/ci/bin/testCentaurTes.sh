@@ -61,5 +61,6 @@ centaur/test_cromwell.sh \
     -e write_lines_files \
     -e draft3_read_write_functions_local \
     -e cwl_input_json \
+    -e directory_type_local \
 
 cromwell::build::generate_code_coverage
