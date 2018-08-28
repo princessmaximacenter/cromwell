@@ -1,0 +1,52 @@
+include required(classpath("application"))
+
+aws {
+
+  application-name = "cromwell"
+
+  auths = [
+    {
+      name = "default"
+      scheme = "default"
+    }
+  ]
+
+  region = "default" // uses region from ~/.aws/config set by aws configure command,
+                     // or us-east-1 by default
+}
+
+engine {
+  filesystems {
+    s3 {
+      auth = "default"
+    }
+  }
+}
+
+backend {
+  default = "AWSBATCH"
+  providers {
+    AWSBATCH {
+      actor-factory = "cromwell.backend.impl.aws.AwsBatchBackendLifecycleActorFactory"
+      config {
+        // Base bucket for workflow executions
+        root = "s3://cromwell-centaur-execution/cromwell-execution"
+
+        // A reference to an auth defined in the `aws` stanza at the top.  This auth is used to create
+        // Jobs and manipulate auth JSONs.
+        auth = "default"
+
+        default-runtime-attributes {
+          queueArn: "arn:aws:cloudformation:us-east-1:952500931424:stack/iam-batch-centaur/e7cfe300-aa1b-11e8-9b6b-500c20ff1436"
+        }
+
+        filesystems {
+          s3 {
+            // A reference to a potentially different auth for manipulating files via engine functions.
+            auth = "default"
+          }
+        }
+      }
+    }
+  }
+}

@@ -25,6 +25,7 @@ scripts/docker-compose-mysql/compose/mysql/data
 /common-workflow-language/
 # Vault rendered resources
 artifactory_credentials.properties
+aws_credentials
 bcs_application.conf
 centaur_application_sentry_config.inc.conf
 cromwell-centaur-requester-pays-service-account.json

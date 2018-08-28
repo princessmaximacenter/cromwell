@@ -12,6 +12,13 @@ cromwell::build::setup_centaur_environment
 
 cromwell::build::assemble_jars
 
+
+# Installing the AWS CLI
+pip install awscli --upgrade --user
+export AWS_SHARED_CREDENTIALS_FILE="${CROMWELL_BUILD_RESOURCES_DIRECTORY}"/aws_credentials
+export AWS_CONFIG_FILE="${CROMWELL_BUILD_RESOURCES_DIRECTORY}"/aws_config
+
+
 # The following tests are skipped:
 #
 # TODO: Find tests to skip
