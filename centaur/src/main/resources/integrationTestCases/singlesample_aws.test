@@ -1,0 +1,13 @@
+name: singlesample_aws
+testFormat: workflowsuccess
+backends: [AWSBATCH]
+
+files {
+  workflow: germline/single-sample-workflow/processing-for-variant-discovery-gatk4.wdl
+  inputs: germline/single-sample-workflow/processing-for-variant-discovery-gatk4.hg38.wgs.s3.inputs.json
+}
+
+metadata {
+  workflowName: PreProcessingForVariantDiscovery_GATK4
+  status: Succeeded
+}
