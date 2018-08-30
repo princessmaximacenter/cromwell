@@ -37,15 +37,13 @@ import software.amazon.awssdk.services.batch.model.
                                           CancelJobRequest,
                                           CancelJobResponse,
                                           ClientException,
-                                          ContainerOverrides,
                                           DescribeJobDefinitionsRequest,
                                           DescribeJobsRequest,
                                           RegisterJobDefinitionRequest,
                                           SubmitJobRequest,
                                           SubmitJobResponse,
                                           JobDefinitionType,
-                                          JobDetail,
-                                          KeyValuePair
+                                          JobDetail
                                         }
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest
