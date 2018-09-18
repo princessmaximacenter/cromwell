@@ -151,7 +151,6 @@ class BigQueryReporter(override val params: ErrorReporterParams) extends ErrorRe
       "ci_env_url" -> ciEnvironment.url,
       "test_attempt" -> Option(testEnvironment.attempt + 1),
       "test_message" -> Option(centaurTestException.message),
-      "test_metadata_json" -> centaurTestException.metadataJsonOption,
       "test_name" -> Option(testEnvironment.name),
       "test_stack_trace" -> centaurTestException.causeOption.map(ExceptionUtils.getStackTrace),
       "test_workflow_id" -> centaurTestException.workflowIdOption,
