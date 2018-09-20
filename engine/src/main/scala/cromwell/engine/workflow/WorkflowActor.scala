@@ -6,6 +6,7 @@ import akka.actor.SupervisorStrategy.Stop
 import akka.actor._
 import com.typesafe.config.Config
 import cromwell.backend._
+import cromwell.backend.standard.callcaching.RootWorkflowFileHashCacheActor
 import cromwell.core.Dispatcher.EngineDispatcher
 import cromwell.core.WorkflowOptions.FinalWorkflowLogDir
 import cromwell.core._
@@ -219,6 +220,8 @@ class WorkflowActor(val workflowId: WorkflowId,
   private val workflowDockerLookupActor = context.actorOf(
     WorkflowDockerLookupActor.props(workflowId, dockerHashActor, initialStartableState.restarted), s"WorkflowDockerLookupActor-$workflowId")
 
+  private val fileHashCacheActor: Option[ActorRef] = Option(context.actorOf(Props(new RootWorkflowFileHashCacheActor(ioActor))))
+
   startWith(WorkflowUnstartedState, WorkflowActorData(initialStartableState))
 
   pushCurrentStateToMetadataService(workflowId, WorkflowUnstartedState.workflowState)
@@ -293,7 +296,8 @@ class WorkflowActor(val workflowId: WorkflowId,
         initializationData,
         startState = data.effectiveStartableState,
         rootConfig = conf,
-        totalJobsByRootWf = totalJobsByRootWf), name = s"WorkflowExecutionActor-$workflowId")
+        totalJobsByRootWf = totalJobsByRootWf,
+        fileHashCacheActor = fileHashCacheActor), name = s"WorkflowExecutionActor-$workflowId")
 
       executionActor ! ExecuteWorkflowCommand
       
