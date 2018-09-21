@@ -71,12 +71,31 @@ the hog group.
 
 ## Effects
 
-Currently, hog factor is only used to limit concurrent job execution within hog groups.
-
 ### Job Execution
 
-Cromwell allows administrators to designate an overall maximum concurrent job limit per backend. 
-Within that limit, hog factors allow them to further limit the maximum concurrent jobs started per hog group
+#### Reserving Space
+
+- Cromwell allows administrators to designate an overall maximum concurrent job limit per backend. 
+- Within that limit, hog factors now allow us to limit the maximum concurrent jobs started per hog group.
+    + This means that new workflows can immediately run even if big workflows are queued up.
+
+#### Round robin allocation
+
+Rather than assigning job tokens on a strict first-come first served basis, Cromwell now assigns in a round-robin
+fashion between hog groups and then on a first-come-first-served *within* a hog group.
+
+In other words if the hog groups had the following entries queued up:
+```
+ A: jobA1, jobA2, jobA3, ..., jobA1000000
+ B: jobB1, jobB2
+ C: jobC1
+ D: jobD1, jobD2
+```
+
+Then Cromwell would start the jobs in the following order, even though `jobA1000000` was added before `jobD1`:
+```
+jobA1, jobB1, jobC1, jobD1, jobA2, jobB2, jobD2, jobA3, ..., jobA1000000
+```
 
 #### Example: How job execution is affected by hog factors
 
@@ -89,9 +108,9 @@ Within that limit, hog factors allow them to further limit the maximum concurren
 ##### Our first hog group hits its limit
 
 - 100 workflows are running in hog group "A" and between them want to send 20,000 jobs to PAPIv2. 
-  + Cromwell will initially limit that to 4,000 and only start new jobs when existing jobs from this group finish.
-  + New workflows in this group will not be able to start jobs either until existing jobs complete.
-  + Note that Cromwell is only using 1/25th of its limit even though it would otherwise be able to go faster.
+    + Cromwell will initially limit that to 4,000 and only start new jobs when existing jobs from this group finish.
+    + New workflows in this group will not be able to start jobs either until existing jobs complete.
+    + Note that Cromwell is only using 1/25th of its limit even though it would otherwise be able to go faster.
 
 ##### Another hog group appears
 
@@ -104,7 +123,8 @@ Within that limit, hog factors allow them to further limit the maximum concurren
 - Cromwell knows about 220,000 jobs that could be started
 - Cromwell has an overall limit of 100,000
 - Cromwell is running 8,000 jobs in two hog groups.
-- Not so great - perhaps we should have set the hog factor lower...?
+
+In other words, not so great - perhaps we should have set the hog factor lower...?
 
 #####But wait, more workflows appear...
 
@@ -117,7 +137,9 @@ Within that limit, hog factors allow them to further limit the maximum concurren
 - A final group submits workflows under hog group "Z".
 - Alas, even though hog group "Z" is not running anything yet, we cannot start their workflows because we're 
 at the global maximum of 100,000.
-- Perhaps we should have set the hog factor higher...?
+
+
+In other words, perhaps we should have set the hog factor higher...?
 
 ##### So what now?
 
@@ -130,7 +152,10 @@ later than those from hog group A. Thus, over time, each group will approach app
 
 #### Can I opt out of using hog groups?
 
-Yes, just set your hog factor to 1 and Cromwell will always run at maximum speed and not reserve any space for smaller
-groups!
+Yes, to various degrees:
+
+- No matter what, your workflows will be assigned to a hog group. 
+- To opt out of reserving Cromwell's resources for new hog groups, set your hog factor to 1.
+- To opt out of round-robin allocation between workflows, assign all workflows to the same hog-group in workflow options.
 
 
