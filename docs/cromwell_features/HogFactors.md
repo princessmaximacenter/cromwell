@@ -157,5 +157,7 @@ Yes, to various degrees:
 - No matter what, your workflows will be assigned to a hog group. 
 - To opt out of reserving Cromwell's resources for new hog groups, set your hog factor to 1.
 - To opt out of round-robin allocation between workflows, assign all workflows to the same hog-group in workflow options.
+    + To set this as the default, you can add a value to the default workflow options. 
+    + For an example see the `workflow-options` / `default` stanza of [cromwell.examples.conf](https://github.com/broadinstitute/cromwell/blob/master/cromwell.examples.conf).
 
 
