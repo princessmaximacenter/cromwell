@@ -448,7 +448,7 @@ cromwell::private::assemble_jars() {
 cromwell::private::generate_code_coverage() {
     sbt coverageReport -warn
     sbt coverageAggregate -warn
-    bash <(curl -s https://codecov.io/bash) > /dev/null || true
+    bash <(curl -s https://codecov.io/bash)
 }
 
 cromwell::private::publish_artifacts_only() {
