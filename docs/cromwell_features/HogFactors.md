@@ -2,8 +2,9 @@
 
 ## Introduction
 
-Cromwell has only a finite amount of resources at its disposal, but workflows can scatter to an arbitrary width.
-This allows a very small number of workflows to hog all of the resources of Cromwell, forcing all other 
+Cromwell has only a finite amount of resources at its disposal. WDL and CWL workflows allow scattered tasks to be
+run a huge number of times with very simple syntax.
+This makes it easy for a very small number of workflows to hog all of the resources of Cromwell, forcing all other 
 workflows (even a simple 'hello_world') to wait in line behind them. 
 Sometimes that's exactly what you want, but often you would like Cromwell to remain responsive to new users' small 
 workflows even while continuing to process production workflows from established users.
@@ -126,7 +127,7 @@ jobA1, jobB1, jobC1, jobD1, jobA2, jobB2, jobD2, jobA3, ..., jobA1000000
 
 - 100 workflows are running in hog group "A" and between them have generated 20,000 jobs for PAPIv2. 
     + Cromwell initially starts 4,000 jobs.
-    + Cromwell starts the remaining 16,000 new jobs as and when existing jobs from this group finish.
+    + Cromwell then starts the remaining 16,000 new jobs as existing jobs from this group finish.
     + New workflows in this group will not be able to start jobs either
         + Their jobs are queued behind the existing jobs from this hog group.
     + Note that Cromwell is currently only using 1/25th of its overall limit because its hog factor is 25.
