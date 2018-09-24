@@ -80,10 +80,8 @@ class RootWorkflowFileHashCacheActor(override val ioActor: ActorRef) extends Act
     // Hash Failure
     case (hashContext: FileHashContext, failure: IoFailure[_]) =>
       handleHashResult(failure, hashContext) { requesters =>
-        // All requesters can get the same response in the case of failure.
-        val response = HashingFailedMessage(hashContext.file, failure.failure)
-        requesters.toList foreach { case FileHashRequester(replyTo, _, ioCommand) =>
-          replyTo ! Tuple2(ioCommand, response)
+        requesters.toList foreach { case FileHashRequester(replyTo, fileHashContext, ioCommand) =>
+          replyTo ! Tuple2(fileHashContext, IoFailure(ioCommand, failure.failure))
         }
         cache.put(hashContext.file, FileHashValuePresent(s"Error hashing file: ${failure.failure.getMessage}".invalidNel))
       }
