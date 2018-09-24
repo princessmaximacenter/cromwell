@@ -29,9 +29,9 @@ object Ast2WdlomSpec {
                     parseFunction: (util.List[WdlParser.Terminal], SyntaxErrorFormatter) => ParseTree)
                    (implicit converter: CheckedAtoB[GenericAstNode, A]): Checked[A] = {
 
-    // Add the "version biscayne" to force the lexer into "main" mode.
-    val versionedExpression = "version biscayne\n" + expression
-    // That "version biscayne" means we'll have 2 unwanted tokens at the start of the list, so drop 'em:
+    // Add the "version 1.1-draft" to force the lexer into "main" mode.
+    val versionedExpression = "version 1.1-draft\n" + expression
+    // That "version 1.1-draft" means we'll have 2 unwanted tokens at the start of the list, so drop 'em:
     val tokens = parser.lex(versionedExpression, "string").asScala.drop(2).asJava
     val terminalMap = (tokens.asScala.toVector map {(_, versionedExpression)}).toMap
     val parseTree = parseFunction(tokens, WdlBiscayneSyntaxErrorFormatter(terminalMap))
