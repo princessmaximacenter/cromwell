@@ -4,10 +4,7 @@ import java.util.concurrent.TimeoutException
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import cats.data.NonEmptyList
-import cats.data.Validated.{Invalid, Valid}
-import cats.syntax.validated._
 import com.google.common.cache.{CacheBuilder, CacheLoader, LoadingCache}
-import common.validation.ErrorOr.ErrorOr
 import cromwell.backend.standard.callcaching.RootWorkflowFileHashCacheActor.IoHashCommandWithContext
 import cromwell.core.callcaching.{HashingFailedMessage, HashingServiceUnvailable}
 import cromwell.core.io._
@@ -21,8 +18,10 @@ class RootWorkflowFileHashCacheActor private(override val ioActor: ActorRef) ext
   case object FileHashValueNotRequested extends FileHashValue
   // The hash value has been requested but is not yet in the cache.
   case class FileHashValueRequested(requesters: NonEmptyList[FileHashRequester]) extends FileHashValue
-  // The hash value is in the cache.
-  case class FileHashValuePresent(value: ErrorOr[String]) extends FileHashValue
+  // Hashing succeeded.
+  case class FileHashSuccess(value: String) extends FileHashValue
+  // Hashing failed.
+  case class FileHashFailure(errors: NonEmptyList[String]) extends FileHashValue
 
   protected def ioCommandBuilder: IoCommandBuilder = DefaultIoCommandBuilder
 
@@ -55,19 +54,17 @@ class RootWorkflowFileHashCacheActor private(override val ioActor: ActorRef) ext
         case FileHashValueNotRequested =>
           // The hash is not in the cache and has not been requested. Make the hash request and register this requester
           // to be notified when the hash value becomes available.
-          // System.err.println(s"I DO DECLARE THAT A FILE HASH IS NEEDED RIGHT ABOUT NOW FOR $key")
           sendIoCommandWithContext(hashCommand.ioHashCommand, hashCommand.fileHashContext)
           cache.put(key, FileHashValueRequested(requesters = NonEmptyList.of(requester)))
         case FileHashValueRequested(requesters) =>
           // We don't have the hash but it has already been requested. Just add this requester and continue waiting for the
           // hash to become available.
           cache.put(key, FileHashValueRequested(requesters = requester :: requesters))
-        case FileHashValuePresent(value) =>
-          val ioResponse: IoAck[_] = value match {
-            case Valid(v: String) => IoSuccess(requester.ioCommand, v)
-            case Invalid(e) => IoFailure(requester.ioCommand, new RuntimeException(s"Error hashing file '$key': ${e.toList.mkString(", ")}"))
-          }
-          sender ! Tuple2(hashCommand.fileHashContext, ioResponse)
+        case FileHashSuccess(value) =>
+          sender ! Tuple2(hashCommand.fileHashContext, IoSuccess(requester.ioCommand, value))
+        case FileHashFailure(nel) =>
+          val errors = nel.toList.mkString(", ")
+          sender ! Tuple2(hashCommand.fileHashContext, IoFailure(requester.ioCommand, new RuntimeException(s"Error hashing file '$key': $errors")))
       }
     // Hash Success
     case (hashContext: FileHashContext, success @ IoSuccess(_, value: String)) =>
@@ -75,7 +72,7 @@ class RootWorkflowFileHashCacheActor private(override val ioActor: ActorRef) ext
         requesters.toList foreach { case FileHashRequester(replyTo, fileHashContext, ioCommand) =>
           replyTo ! Tuple2(fileHashContext, IoSuccess(ioCommand, success.result))
         }
-        cache.put(hashContext.file, FileHashValuePresent(value.validNel))
+        cache.put(hashContext.file, FileHashSuccess(value))
       }
     // Hash Failure
     case (hashContext: FileHashContext, failure: IoFailure[_]) =>
@@ -83,7 +80,7 @@ class RootWorkflowFileHashCacheActor private(override val ioActor: ActorRef) ext
         requesters.toList foreach { case FileHashRequester(replyTo, fileHashContext, ioCommand) =>
           replyTo ! Tuple2(fileHashContext, IoFailure(ioCommand, failure.failure))
         }
-        cache.put(hashContext.file, FileHashValuePresent(s"Error hashing file: ${failure.failure.getMessage}".invalidNel))
+        cache.put(hashContext.file, FileHashFailure(NonEmptyList.of(s"Error hashing file: ${failure.failure.getMessage}")))
       }
     case other =>
       log.warning(s"Root workflow file hash caching actor received unexpected message: $other")
@@ -96,7 +93,7 @@ class RootWorkflowFileHashCacheActor private(override val ioActor: ActorRef) ext
       case FileHashValueRequested(requesters) => notifyRequestersAndCacheValue(requesters)
       case FileHashValueNotRequested =>
         log.error(s"Programmer error! Not expecting message type ${ioAck.getClass.getSimpleName} with no requesters for the hash: $fileHashContext")
-      case FileHashValuePresent(_) =>
+      case _ =>
         log.error(s"Programmer error! Not expecting message type ${ioAck.getClass.getSimpleName} when the hash value has already been received: $fileHashContext")
     }
   }
