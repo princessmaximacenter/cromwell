@@ -55,7 +55,7 @@ class RootWorkflowFileHashCacheActor(override val ioActor: ActorRef) extends Act
         case FileHashValueNotRequested =>
           // The hash is not in the cache and has not been requested. Make the hash request and register this requester
           // to be notified when the hash value becomes available.
-          System.err.println(s"I DO DECLARE THAT A FILE HASH IS NEEDED RIGHT ABOUT NOW FOR $key")
+          // System.err.println(s"I DO DECLARE THAT A FILE HASH IS NEEDED RIGHT ABOUT NOW FOR $key")
           sendIoCommandWithContext(hashCommand.ioHashCommand, hashCommand.fileHashContext)
           cache.put(key, FileHashValueRequested(requesters = NonEmptyList.of(requester)))
         case FileHashValueRequested(requesters) =>
