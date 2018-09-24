@@ -1,5 +1,6 @@
 package cromwell.backend.standard.callcaching
 
+import java.io.IOException
 import java.util.concurrent.TimeoutException
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
@@ -21,7 +22,7 @@ class RootWorkflowFileHashCacheActor private(override val ioActor: ActorRef) ext
   // Hashing succeeded.
   case class FileHashSuccess(value: String) extends FileHashValue
   // Hashing failed.
-  case class FileHashFailure(errors: NonEmptyList[String]) extends FileHashValue
+  case class FileHashFailure(error: String) extends FileHashValue
 
   protected def ioCommandBuilder: IoCommandBuilder = DefaultIoCommandBuilder
 
@@ -62,9 +63,8 @@ class RootWorkflowFileHashCacheActor private(override val ioActor: ActorRef) ext
           cache.put(key, FileHashValueRequested(requesters = requester :: requesters))
         case FileHashSuccess(value) =>
           sender ! Tuple2(hashCommand.fileHashContext, IoSuccess(requester.ioCommand, value))
-        case FileHashFailure(nel) =>
-          val errors = nel.toList.mkString(", ")
-          sender ! Tuple2(hashCommand.fileHashContext, IoFailure(requester.ioCommand, new RuntimeException(s"Error hashing file '$key': $errors")))
+        case FileHashFailure(error) =>
+          sender ! Tuple2(hashCommand.fileHashContext, IoFailure(requester.ioCommand, new IOException(error)))
       }
     // Hash Success
     case (hashContext: FileHashContext, success @ IoSuccess(_, value: String)) =>
@@ -80,7 +80,7 @@ class RootWorkflowFileHashCacheActor private(override val ioActor: ActorRef) ext
         requesters.toList foreach { case FileHashRequester(replyTo, fileHashContext, ioCommand) =>
           replyTo ! Tuple2(fileHashContext, IoFailure(ioCommand, failure.failure))
         }
-        cache.put(hashContext.file, FileHashFailure(NonEmptyList.of(s"Error hashing file: ${failure.failure.getMessage}")))
+        cache.put(hashContext.file, FileHashFailure(s"Error hashing file '${hashContext.file}': ${failure.failure.getMessage}"))
       }
     case other =>
       log.warning(s"Root workflow file hash caching actor received unexpected message: $other")
