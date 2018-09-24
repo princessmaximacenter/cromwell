@@ -4,6 +4,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.SupervisorStrategy.Stop
 import akka.actor._
+import cats.instances.option._
+import cats.syntax.functor._
 import com.typesafe.config.Config
 import cromwell.backend._
 import cromwell.backend.standard.callcaching.RootWorkflowFileHashCacheActor
@@ -29,6 +31,8 @@ import cromwell.engine.workflow.workflowstore.WorkflowStoreActor.WorkflowStoreWr
 import cromwell.engine.workflow.workflowstore.{RestartableAborting, StartableState, WorkflowHeartbeatConfig}
 import cromwell.subworkflowstore.SubWorkflowStoreActor.WorkflowComplete
 import cromwell.webservice.EngineStatsActor
+import mouse.all._
+import net.ceedubs.ficus.Ficus._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -220,7 +224,12 @@ class WorkflowActor(val workflowId: WorkflowId,
   private val workflowDockerLookupActor = context.actorOf(
     WorkflowDockerLookupActor.props(workflowId, dockerHashActor, initialStartableState.restarted), s"WorkflowDockerLookupActor-$workflowId")
 
-  private val fileHashCacheActor: Option[ActorRef] = Option(context.actorOf(Props(new RootWorkflowFileHashCacheActor(ioActor))))
+  val fileHashCacheActor: Option[ActorRef] = {
+    // If this flag is not set assume the file hash cache is off. If the flag is set 
+    val enabled = conf.as[Option[Boolean]]("system.file-hash-cache").getOrElse(false)
+    val props: Option[Props] = enabled.option(()).as(RootWorkflowFileHashCacheActor.props(ioActor))
+    props map context.system.actorOf
+  }
 
   startWith(WorkflowUnstartedState, WorkflowActorData(initialStartableState))
 

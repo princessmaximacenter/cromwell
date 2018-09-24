@@ -2,7 +2,7 @@ package cromwell.backend.standard.callcaching
 
 import java.util.concurrent.TimeoutException
 
-import akka.actor.{Actor, ActorLogging, ActorRef}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import cats.syntax.validated._
@@ -13,7 +13,7 @@ import cromwell.core.callcaching.{HashingFailedMessage, HashingServiceUnvailable
 import cromwell.core.io._
 
 
-class RootWorkflowFileHashCacheActor(override val ioActor: ActorRef) extends Actor with ActorLogging with IoClientHelper {
+class RootWorkflowFileHashCacheActor private(override val ioActor: ActorRef) extends Actor with ActorLogging with IoClientHelper {
   case class FileHashRequester(replyTo: ActorRef, fileHashContext: FileHashContext, ioCommand: IoCommand[_])
 
   sealed trait FileHashValue
@@ -104,4 +104,6 @@ class RootWorkflowFileHashCacheActor(override val ioActor: ActorRef) extends Act
 
 object RootWorkflowFileHashCacheActor {
   case class IoHashCommandWithContext(ioHashCommand: IoHashCommand, fileHashContext: FileHashContext)
+
+  def props(ioActor: ActorRef): Props = Props(new RootWorkflowFileHashCacheActor(ioActor))
 }
