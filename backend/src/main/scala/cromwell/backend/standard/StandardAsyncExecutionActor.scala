@@ -252,7 +252,7 @@ trait StandardAsyncExecutionActor extends AsyncBackendJobExecutionActor with Sta
   }
 
   /** Any custom code that should be run within commandScriptContents before the instantiated command. */
-  def scriptPreamble: String = ""
+  def scriptPreamble: String = """trap "{ echo 1 > rc; echo killed by scheduler >&2; }" SIGUSR2"""
 
   def cwd: Path = commandDirectory
   def rcPath: Path = cwd./(jobPaths.returnCodeFilename)
@@ -352,10 +352,8 @@ trait StandardAsyncExecutionActor extends AsyncBackendJobExecutionActor with Sta
         |export _JAVA_OPTIONS=-Djava.io.tmpdir="$$tmpDir"
         |export TMPDIR="$$tmpDir"
         |export HOME="$home"
-        |(
         |cd $cwd
         |SCRIPT_PREAMBLE
-        |)
         |$out="$${tmpDir}/out.$$$$" $err="$${tmpDir}/err.$$$$"
         |mkfifo "$$$out" "$$$err"
         |trap 'rm "$$$out" "$$$err"' EXIT
